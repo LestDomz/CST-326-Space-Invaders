@@ -1,21 +1,37 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class EnemyType4 : MonoBehaviour
 {
     public delegate void EnemyDied(int points);
     public static event EnemyDied OnEnemyDied;
+    public Animator animator;
+    public float Death = 1f;
+    private AudioSource hitSound;
 
-    // Start is called before the first frame update
-    [System.Obsolete]
+    void Start()
+    {
+        animator = GetComponent<Animator>();
+        hitSound = GetComponent<AudioSource>();
+    }
+
     void OnCollisionEnter2D(Collision2D collision)
     {
-      Debug.Log("Ouch!");
-      Destroy(collision.gameObject);
-      Destroy(gameObject);
+        if (collision.gameObject.CompareTag("Bullet"))
+        {
+            Destroy(collision.gameObject);
+            StartCoroutine(PlayDeathAnimation());
 
-        OnEnemyDied?.Invoke(200);
-        FindObjectOfType<EnemyManager>().EnemyDestroyed();
+            OnEnemyDied?.Invoke(250);
+            FindObjectOfType<EnemyManager>().EnemyDestroyed("EnemyType1");
+        }
+    }
+
+    IEnumerator PlayDeathAnimation()
+    {
+        animator.SetTrigger("Die");
+        yield return new WaitForSeconds(Death);
+        hitSound.Play();
+        Destroy(gameObject);
     }
 }

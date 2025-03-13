@@ -4,13 +4,12 @@ using UnityEngine;
 
 public class Player : MonoBehaviour
 {
-  public GameObject bulletPrefab;
-
-  public Transform shottingOffset;
-
+    public GameObject bulletPrefab;
+    public Transform shottingOffset;
     Animator playerAnimator;
+    private AudioSource hitSound;
 
-   public float maxPlayerSpeed = 10.0f;
+    public float maxPlayerSpeed = 10.0f;
     private void Start()
     {
         EnemyType1.OnEnemyDied += EnemyOnOnEnemyDied;
@@ -18,6 +17,7 @@ public class Player : MonoBehaviour
         EnemyType3.OnEnemyDied += EnemyOnOnEnemyDied;
         EnemyType4.OnEnemyDied += EnemyOnOnEnemyDied;
         playerAnimator = GetComponent<Animator>();
+        hitSound = GetComponent<AudioSource>();
     }
 
     private void OnDestroy()
@@ -45,14 +45,16 @@ public class Player : MonoBehaviour
         transform.position = newPosition;
 
         if (Input.GetKeyDown(KeyCode.Space))
-      {
-        playerAnimator.SetTrigger("Shoot Trigger");
+        {
 
-        GameObject shot = Instantiate(bulletPrefab, shottingOffset.position, Quaternion.identity);
-        Debug.Log("Bang!");
+            playerAnimator.SetTrigger("Shoot Trigger");
 
-        //Destroy(shot, 3f);
+            GameObject shot = Instantiate(bulletPrefab, shottingOffset.position, Quaternion.identity);
+            Debug.Log("Bang!");
+            hitSound.Play();
 
-      }
+            //Destroy(shot, 3f);
+
+        }
     }
 }

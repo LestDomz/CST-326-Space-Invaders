@@ -1,23 +1,33 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement; // Required for scene transitions
 
 public class EnemyManager : MonoBehaviour
 {
-    public Transform enemyContainer; // Parent object holding all enemies
-    public float moveSpeed = 1.0f;   // Base horizontal speed
-    public float speedIncreaseFactor = 0.1f; // How much speed increases per enemy destroyed
-    public float maxMoveSpeed = 5.0f; // Limit to prevent excessive speed
-    public float moveDownAmount = 0.5f; // Distance to move downward
-    public float moveDelay = 0.5f;   // Initial movement delay
-    public float minMoveDelay = 0.1f; // The fastest possible movement speed
-    public float boundaryX = 5.0f;   // Left/right movement boundary
+    public int enemyType1Count = 0;
+    public int enemyType2Count = 0;
+    public int enemyType3Count = 0;
+    public int enemyType4Count = 0;
+
+    public Transform enemyContainer; // Parent holding all enemies
+    public float moveSpeed = 1.0f;
+    public float moveDownAmount = 0.5f;
+    public float moveDelay = 0.5f;
+    public float minMoveDelay = 0.1f;
+    public float boundaryX = 5.0f;
 
     private int direction = 1; // 1 = right, -1 = left
-    private int totalEnemies;  // Track the total number of enemies
+    private int totalEnemies;
 
     void Start()
     {
-        totalEnemies = enemyContainer.childCount; // Get initial enemy count
+        // Count how many of each enemy type are in the scene at the start
+        enemyType1Count = FindObjectsOfType<EnemyType1>().Length;
+        enemyType2Count = FindObjectsOfType<EnemyType2>().Length;
+        enemyType3Count = FindObjectsOfType<EnemyType3>().Length;
+        enemyType4Count = FindObjectsOfType<EnemyType4>().Length;
+
+        Debug.Log($"Enemies at start -> Type1: {enemyType1Count}, Type2: {enemyType2Count}, Type3: {enemyType3Count}, Type4: {enemyType4Count}");
         StartCoroutine(MoveEnemies());
     }
 
@@ -25,36 +35,71 @@ public class EnemyManager : MonoBehaviour
     {
         while (enemyContainer.childCount > 0) // Keep moving while enemies exist
         {
-            // Move enemies horizontally
             enemyContainer.position += Vector3.right * moveSpeed * direction;
 
-            // Check if any enemy reaches a boundary
             foreach (Transform enemy in enemyContainer)
             {
                 if (Mathf.Abs(enemy.position.x) >= boundaryX)
                 {
                     MoveDown();
-                    break; // Stop checking after one enemy triggers movement
+                    break;
                 }
             }
 
-            yield return new WaitForSeconds(moveDelay); // Wait before next move
+            yield return new WaitForSeconds(moveDelay);
         }
     }
 
     void MoveDown()
     {
-        direction *= -1; // Reverse direction
-        enemyContainer.position += Vector3.down * moveDownAmount; // Move downward
+        direction *= -1;
+        enemyContainer.position += Vector3.down * moveDownAmount;
     }
 
-    public void EnemyDestroyed()
+    public void EnemyDestroyed(string enemyType)
     {
-        int remainingEnemies = enemyContainer.childCount;
+        // Reduce the count based on enemy type
+        if (enemyType == "EnemyType1") enemyType1Count--;
+        else if (enemyType == "EnemyType2") enemyType2Count--;
+        else if (enemyType == "EnemyType3") enemyType3Count--;
+        else if (enemyType == "EnemyType4") enemyType4Count--;
 
-        // Speed up as more enemies are destroyed
-        float speedMultiplier = 1.0f + ((totalEnemies - remainingEnemies) * 0.05f);
-        moveDelay = Mathf.Max(0.5f / speedMultiplier, minMoveDelay); // Decrease delay
-        moveSpeed = Mathf.Min(moveSpeed + speedIncreaseFactor, maxMoveSpeed); // Increase horizontal speed
+        Debug.Log($"Remaining Enemies -> Type1: {enemyType1Count}, Type2: {enemyType2Count}, Type3: {enemyType3Count}, Type4: {enemyType4Count}");
+
+        // If all enemy counts reach 0, transition to credits
+        if (enemyType1Count <= -6 && enemyType2Count <= 2 && enemyType3Count <= 2 && enemyType4Count <= 2)
+        {
+            Debug.Log("All enemy types destroyed! Transitioning to Credits...");
+            Invoke("LoadCreditsScene", 1f);
+        }
+    }
+
+    IEnumerator CheckAllEnemiesDefeated()
+    {
+        yield return new WaitForSeconds(0.1f); // Small delay for Unity to update the hierarchy
+
+        int activeEnemies = 0;
+        foreach (Transform enemy in enemyContainer)
+        {
+            if (enemy.childCount > 0) // If it has children, it's an enemy type, skip it
+                continue;
+
+            activeEnemies++; // Count only active enemies
+        }
+
+        Debug.Log("Remaining Active Enemies: " + activeEnemies);
+
+        if (activeEnemies == 0) // If no active enemies remain, transition to credits
+        {
+            Debug.Log("All enemies defeated! Transitioning to Credits...");
+            Invoke("LoadCreditsScene", 1f);
+        }
+    }
+
+
+    void LoadCreditsScene()
+    {
+        Debug.Log("Loading Credits Scene...");
+        SceneManager.LoadScene("Credits"); // Load the Credits scene
     }
 }
